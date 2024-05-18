@@ -1,30 +1,34 @@
 const express = require('express');
 const app = express();
-const port = 6600;
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const { method, url } = req;
-  const timestamp = new Date().toISOString();
-  const author = "Yugal";
+const loggingMiddleware = (req, res, next) => {
+    const startTime = new Date().getTime();
+    const author = "Yugal";
 
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    console.log(` 
-    TimeStamp : [${timestamp}] 
-    Method : ${method} 
-    URL : ${url} 
-    Time : ${duration}ms
-    Author : ${author}`);
-  });
+    const sendReq = res.send;
+    res.send = function(data) {
+        const duration = new Date().getTime() - startTime;
+        console.log(`
+          Method: ${req.method} ,
+          URL: ${req.url} ,
+          Timestamp: ${new Date()},
+          Duration: ${duration}ms,
+          Author : ${author}`);
+          sendReq.call(this, data);
+    };
+    
+    next();
+};
 
-  next();
+app.use(loggingMiddleware);
+
+app.get('/logging', (req, res) => {
+    res.send({
+      message : 'Logging Middleware Success'
+    });
 });
 
-app.get('/User/logging', (req, res) => {
-  res.send({ "message" : "Logging Middleware Success"});
-});
-
-app.listen(port, () => {
-  console.log(`Server running on ${port}`);
+const PORT = 6600;
+app.listen(PORT, () => {
+    console.log(`Server is running on ${PORT}`);
 });
